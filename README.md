@@ -385,9 +385,9 @@ given()
 
 ## 👤 Autor
 
-**Geovane Gustavo**
+**Geovane Gustavo Torres**
 
-Profissional de QA com mais de 20 anos de experiência em testes manuais, em transição para automação de testes com foco em APIs REST.
+Profissional de QA.
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Geovane%20Gustavo-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/geovanegustavo)
 [![GitHub](https://img.shields.io/badge/GitHub-geovanegustavo-181717?logo=github&logoColor=white)](https://github.com/geovanegustavo)
