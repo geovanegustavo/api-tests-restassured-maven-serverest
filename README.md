@@ -82,6 +82,14 @@ A API alvo utilizada é o **ServeRest**, um servidor REST open source que simula
     <version>7.8.0</version>
     <scope>test</scope>
 </dependency>
+
+<!-- Logback -->
+<dependency>
+    <groupId>ch.qos.logback</groupId>
+    <artifactId>logback-classic</artifactId>
+    <version>1.5.6</version>
+    <scope>test</scope>
+</dependency>
 ```
 
 ---
