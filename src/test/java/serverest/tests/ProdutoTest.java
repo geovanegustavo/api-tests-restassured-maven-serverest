@@ -2,16 +2,16 @@ package serverest.tests;
 
 import io.restassured.RestAssured;
 import org.testng.annotations.Test;
+import serverest.base.BaseTest;
 import serverest.model.Produto;
-import serverest.util.TokenHolder;
 import serverest.util.ProdutoHelper;
 
 import static org.hamcrest.Matchers.*;
-import static serverest.util.Mensagens.*;
+import static serverest.util.Constants.*;
 import static io.restassured.RestAssured.given;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 
-public class ProdutoTest {
+public class ProdutoTest extends BaseTest {
 
     static {
         RestAssured.baseURI = "https://serverest.dev";
@@ -26,10 +26,12 @@ public class ProdutoTest {
             groups = {"produto", "sucesso"}
     )
     public void cadastrarProduto() {
-        produtoId = given()
+        /*produtoId = given()
             .contentType("application/json")
             .header("Authorization", "Bearer " + TokenHolder.token)
             .log().all()
+            .body(produtoCriado)*/
+        produtoId = requestAuth()
             .body(produtoCriado)
         .when()
             .post("/produtos")
@@ -50,19 +52,16 @@ public class ProdutoTest {
             groups = {"produto", "exceção"}
     )
     public void cadastrarProdutoExistente() {
-        given()
-                .contentType("application/json")
-                .header("Authorization", "Bearer " + TokenHolder.token)
-                .log().all()
-                .body(produtoCriado)
-                .when()
-                .post("/produtos")
-                .then()
-                //.log().ifValidationFails()
-                .log().all()
-                .statusCode(400)
-                .body("message", equalTo(MSG_PRODUTO_EXISTENTE))
-                .body(matchesJsonSchemaInClasspath("schemas/produto/cadastrar-produto-cadastrado-schema.json"));
+        requestAuth()
+            .body(produtoCriado)
+        .when()
+            .post("/produtos")
+        .then()
+            //.log().ifValidationFails()
+            .log().all()
+            .statusCode(400)
+            .body("message", equalTo(MSG_PRODUTO_EXISTENTE))
+            .body(matchesJsonSchemaInClasspath("schemas/produto/cadastrar-produto-cadastrado-schema.json"));
     }
 
     @Test(
@@ -72,10 +71,12 @@ public class ProdutoTest {
             groups = {"produto", "sucesso"}
     )
     public void listarProdutoPorId() {
-        given()
+        /*given()
             .header("Authorization", "Bearer " + TokenHolder.token)
             .pathParam("id", produtoId)
-            .log().all()
+            .log().all()*/
+        requestAuth()
+            .pathParam("id", produtoId)
         .when()
             .get("/produtos/{id}")
         .then()
@@ -96,10 +97,11 @@ public class ProdutoTest {
             groups = {"produto", "sucesso"}
     )
     public void pesquisarProdutoPorNome() {
-        given()
+        /*given()
             .header("Authorization", "Bearer " + TokenHolder.token)
             .queryParam("nome", produtoCriado.getNome())
-            .log().all()
+            .log().all()*/
+        requestAuth()
         .when()
             .get("/produtos")
         .then()
@@ -129,11 +131,14 @@ public class ProdutoTest {
         produtoCriado.getQuantidade() + 10
         );
 
-        given()
+        /*given()
             .contentType("application/json")
             .header("Authorization", "Bearer " + TokenHolder.token)
             .pathParam("id", produtoId)
             .log().all()
+            .body(produtoEditado)*/
+        requestAuth()
+            .pathParam("id", produtoId)
             .body(produtoEditado)
         .when()
             .put("/produtos/{id}")
@@ -151,10 +156,12 @@ public class ProdutoTest {
             groups = {"produto", "sucesso"}
     )
     public void excluirProduto() {
-        given()
+        /*given()
             .header("Authorization", "Bearer " + TokenHolder.token)
             .pathParam("id", produtoId)
-            .log().all()
+            .log().all()*/
+        requestAuth()
+            .pathParam("id", produtoId)
         .when()
             .delete("/produtos/{id}")
         .then()
@@ -164,10 +171,6 @@ public class ProdutoTest {
             .body(matchesJsonSchemaInClasspath("schemas/produto/excluir-produto-schema.json"));
     }
 
-    /**
-     * CENÁRIOS DE EXCEÇÃO
-     */
-
     @Test(
             priority = 7,
             description = "NÃO deve encontrar produto já excluído",
@@ -175,10 +178,12 @@ public class ProdutoTest {
             groups = {"produto", "exceção"}
     )
     public void listarProdutoExcluido() {
-        given()
+        /*given()
             .header("Authorization", "Bearer " + TokenHolder.token)
             .pathParam("id", produtoId)
-            .log().all()
+            .log().all()*/
+        requestAuth()
+            .pathParam("id", produtoId)
         .when()
             .get("/produtos/{id}")
         .then()
@@ -195,15 +200,15 @@ public class ProdutoTest {
             groups = {"produto", "exceção"}
     )
     public void cadastrarProdutoSemToken() {
-        given()
+        /*given()
             .contentType("application/json")
-            //.header("Authorization", "Bearer " + TokenHolder.token)
             .log().all()
+            .body(produtoCriado)*/
+        requestNoAuth()
             .body(produtoCriado)
-            .when()
+        .when()
             .post("/produtos")
-            .then()
-            //.log().ifValidationFails()
+        .then()
             .log().all()
             .statusCode(401)
             .body("message", equalTo(MSG_TOKEN_INVALIDO))

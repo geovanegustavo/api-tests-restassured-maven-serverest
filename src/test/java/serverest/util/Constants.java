@@ -1,6 +1,6 @@
 package serverest.util;
 
-public class Mensagens {
+public class Constants {
 
     public static final String MSG_CADASTRO_SUCESSO = "Cadastro realizado com sucesso";
     public static final String MSG_REGISTRO_ALTERADO = "Registro alterado com sucesso";
@@ -20,7 +20,7 @@ public class Mensagens {
     public static final String MSG_PRODUTO_EXISTENTE = "Já existe produto com esse nome";
     public static final String MSG_PRODUTO_NAO_ENCONTRADO = "Produto não encontrado";
 
-    private Mensagens() {
+    private Constants() {
         // construtor privado para evitar instância
     }
 }

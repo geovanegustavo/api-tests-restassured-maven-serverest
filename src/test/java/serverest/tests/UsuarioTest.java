@@ -2,6 +2,7 @@ package serverest.tests;
 
 import io.restassured.RestAssured;
 import org.testng.annotations.Test;
+import serverest.base.BaseTest;
 import serverest.model.Usuario;
 import serverest.util.TokenHolder;
 import serverest.util.UsuarioHelper;
@@ -10,9 +11,9 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static io.restassured.module.jsv.JsonSchemaValidator.*;
 import static serverest.util.IdHelper.gerarIdAleatorio;
-import static serverest.util.Mensagens.*;
+import static serverest.util.Constants.*;
 
-public class UsuarioTest {
+public class UsuarioTest extends BaseTest {
 
     static {
         RestAssured.baseURI = "https://serverest.dev";
@@ -36,9 +37,11 @@ public class UsuarioTest {
             groups = {"usuario", "sucesso"}
     )
     public void cadastrarUsuarioAdmin() {
-        usuarioId = given()
+        /*usuarioId = given()
             .contentType("application/json")
             .log().all()
+            .body(usuarioCriado)*/
+        usuarioId = requestNoAuth()
             .body(usuarioCriado)
         .when()
             .post("/usuarios")
@@ -61,9 +64,11 @@ public class UsuarioTest {
             groups = {"usuario", "sucesso"}
     )
     public void cadastrarUsuarioComum() {
-        usuarioComumId = given()
+        /*usuarioComumId = given()
             .contentType("application/json")
             .log().all()
+            .body(usuarioComumCriado)*/
+        usuarioComumId = requestNoAuth()
             .body(usuarioComumCriado)
         .when()
             .post("/usuarios")
@@ -83,9 +88,11 @@ public class UsuarioTest {
             groups = {"usuario", "exceção"}
     )
     public void cadastrarUsuarioEmailDuplicado() {
-        given()
+        /*given()
             .contentType("application/json")
             .log().all()
+            .body(usuarioComumCriado)*/
+        requestNoAuth()
             .body(usuarioComumCriado)
         .when()
             .post("/usuarios")
@@ -103,9 +110,11 @@ public class UsuarioTest {
             groups = {"usuario", "sucesso"}
     )
     public void listarUsuarioPorId() {
-        given()
+        /*given()
             .pathParam("id", usuarioId)
-            .log().all()
+            .log().all()*/
+        requestNoAuth()
+            .pathParam("id", usuarioId)
         .when()
             .get("/usuarios/{id}")
         .then()
@@ -126,9 +135,11 @@ public class UsuarioTest {
             groups = {"usuario", "sucesso"}
     )
     public void pesquisarUsuarioPorNome() {
-        given()
+        /*given()
             .queryParam("nome", usuarioCriado.getNome())
-            .log().all()
+            .log().all()*/
+        requestNoAuth()
+            .queryParam("nome", usuarioCriado.getNome())
         .when()
             .get("/usuarios")
         .then()
@@ -157,10 +168,13 @@ public class UsuarioTest {
             "true"
         );
 
-        given()
+        /*given()
             .contentType("application/json")
             .pathParam("id", usuarioComumId)
             .log().all()
+            .body(usuarioEditado)*/
+        requestNoAuth()
+            .pathParam("id", usuarioComumId)
             .body(usuarioEditado)
         .when()
             .put("/usuarios/{id}")
@@ -178,9 +192,11 @@ public class UsuarioTest {
             groups = {"usuario", "sucesso"}
     )
     public void excluirUsuario() {
-        given()
-            .pathParam("id", usuarioInexistenteId) // Vide cenários de exceção
-            .log().all()
+        /*given()
+            .pathParam("id", usuarioInexistenteId)
+            .log().all()*/
+        requestNoAuth()
+            .pathParam("id", usuarioInexistenteId)
         .when()
             .delete("/usuarios/{id}")
         .then()
@@ -201,11 +217,14 @@ public class UsuarioTest {
         String emailInexistente = UsuarioHelper.gerarEmail();
         Usuario usuarioInexistente = new Usuario(nomeUsuarioInexistente, emailInexistente, senha, "false");
 
-        usuarioInexistenteId = given()
+        /*usuarioInexistenteId = given()
             .contentType("application/json")
             .pathParam("id", gerarIdAleatorio())
             .log().all()
-            .body(usuarioInexistente)
+            .body(usuarioInexistente)*/
+        usuarioInexistenteId = requestNoAuth()
+                .pathParam("id", gerarIdAleatorio())
+                .body(usuarioInexistente)
         .when()
             .put("/usuarios/{id}")
         .then()
