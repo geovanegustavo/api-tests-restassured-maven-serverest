@@ -1,11 +1,13 @@
 package serverest.base;
 
 import io.restassured.RestAssured;
+import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.specification.RequestSpecification;
+import io.restassured.specification.ResponseSpecification;
 import org.testng.annotations.BeforeClass;
-import serverest.util.TokenHolder;
 
 import static io.restassured.RestAssured.given;
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 
 public abstract class BaseTest {
 
@@ -14,27 +16,47 @@ public abstract class BaseTest {
         RestAssured.baseURI = "https://serverest.dev";
     }
 
-    protected RequestSpecification request() {
-        return given()
-                .log().all();
-    }
+    // --- REUTILIZAÇÃO DE REQUESTS ---
 
+    /**
+     * Valida o tipo de conteúdo
+     */
     protected RequestSpecification requestJson() {
         return given()
                 .contentType("application/json")
                 .log().all();
     }
 
-    protected RequestSpecification requestAuth() {
+    /**
+     * Valida o tipo de conteúdo e passa o bearer token
+     */
+    protected RequestSpecification requestAuth(String token) {
         return given()
                 .contentType("application/json")
-                .header("Authorization", "Bearer " + TokenHolder.token)
+                .header("Authorization", "Bearer " + token)
                 .log().all();
     }
 
-    protected RequestSpecification requestNoAuth() {
-        return given()
-                .contentType("application/json")
-                .log().all();
+    // --- REUTILIZAÇÃO DE RESPONSES ---
+
+    /**
+     * Valida o status HTTP esperado e garante que o Content-Type seja JSON.
+     */
+    protected ResponseSpecification responseStatusEJson(int statusCode) {
+        return new ResponseSpecBuilder()
+                .expectStatusCode(statusCode)
+                .expectContentType("application/json")
+                .build();
+    }
+
+    /**
+     * Valida o status HTTP e também valida o contrato (JSON Schema).
+     */
+    protected ResponseSpecification responseComSchema(int statusCode, String schemaPath) {
+        return new ResponseSpecBuilder()
+                .expectStatusCode(statusCode)
+                .expectContentType("application/json")
+                .expectBody(matchesJsonSchemaInClasspath(schemaPath))
+                .build();
     }
 }

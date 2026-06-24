@@ -1,133 +1,133 @@
 package serverest.tests;
 
-import io.restassured.response.Response;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import serverest.base.BaseTest;
-import serverest.util.TokenHolder;
+import serverest.model.Usuario;
+import serverest.util.UsuarioHelper;
 
-import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.hamcrest.Matchers.equalTo;
 import static serverest.util.Constants.*;
 
 public class LoginTest extends BaseTest {
 
+    private String emailValido;
+    private final String senhaValida = "1234";
+
+    @BeforeClass(description = "Cria um utilizador válido prévio para os testes de login")
+    public void setupLogin() {
+        emailValido = UsuarioHelper.gerarEmail();
+        Usuario usuarioAdmin = new Usuario("Admin QA Login", emailValido, senhaValida, "true");
+
+        requestJson()
+            .body(usuarioAdmin)
+        .when()
+            .post("/usuarios")
+        .then()
+            .statusCode(201);
+    }
+
     @Test(
             priority = 1,
             description = "Deve logar usuário administrador com credenciais válidas",
-            dependsOnMethods = "cadastrarUsuarioAdmin",
             groups = {"login", "sucesso"}
     )
     public void realizarLoginUsuarioAdmin() {
-        String body = "{" +
-                "\"email\": \"" + TokenHolder.email + "\"," +
-                "\"password\": \"" + TokenHolder.password + "\"" +
-                "}";
+        Map<String, String> credenciais = new HashMap<>();
+        credenciais.put("email", emailValido);
+        credenciais.put("password", senhaValida);
 
-        Response response = requestNoAuth()
-            .body(body)
+        requestJson()
+            .body(credenciais)
         .when()
             .post("/login")
         .then()
             .log().all()
-            .statusCode(200)
-            .body("message", equalTo(MSG_LOGIN_SUCESSO))
-            .body(matchesJsonSchemaInClasspath("schemas/login/realizar-login-schema.json"))
-            .extract().response();
-
-        TokenHolder.token = response.jsonPath().getString("authorization").replace("Bearer ", "");
+            .spec(responseComSchema(200, "schemas/login/realizar-login-schema.json"))
+            .body("message", equalTo(MSG_LOGIN_SUCESSO));
     }
 
     @Test(
             priority = 2,
             description = "NÃO deve logar usuário com credenciais inválidas",
-            dependsOnMethods = "cadastrarUsuarioAdmin",
             groups = {"login", "exceção"}
     )
     public void realizarLoginInvalido() {
-        String body = "{" +
-                "\"email\": \"email@invalido.com\"," +
-                "\"password\": \"1234\"" +
-                "}";
+        Map<String, String> credenciais = new HashMap<>();
+        credenciais.put("email", "email@invalido.com");
+        credenciais.put("password", "1234");
 
-        requestNoAuth()
-            .body(body)
+        requestJson()
+            .body(credenciais)
         .when()
             .post("/login")
         .then()
             .log().all()
-            .statusCode(401)
-            .body("message", equalTo(MSG_LOGIN_ERRADO))
-            .body(matchesJsonSchemaInClasspath("schemas/login/realizar-login-errado-schema.json"));
+            .spec(responseComSchema(401, "schemas/login/realizar-login-errado-schema.json"))
+            .body("message", equalTo(MSG_LOGIN_ERRADO));
     }
 
     @Test(
             priority = 3,
             description = "NÃO deve logar usuário sem e-mail",
-            dependsOnMethods = "cadastrarUsuarioAdmin",
             groups = {"login", "exceção"}
     )
     public void realizarLoginSemEmail() {
-        String body = "{" +
-                "\"email\": \"\"," +
-                "\"password\": \"1234\"" +
-                "}";
+        Map<String, String> credenciais = new HashMap<>();
+        credenciais.put("email", "");
+        credenciais.put("password", "1234");
 
-        requestNoAuth()
-            .body(body)
+        requestJson()
+            .body(credenciais)
         .when()
             .post("/login")
         .then()
             .log().all()
-            .statusCode(400)
-            .body("email", equalTo(MSG_LOGIN_SEM_EMAIL))
-            .body(matchesJsonSchemaInClasspath("schemas/login/realizar-login-sem-email-schema.json"));
+            .spec(responseComSchema(400, "schemas/login/realizar-login-sem-email-schema.json"))
+            .body("email", equalTo(MSG_LOGIN_SEM_EMAIL));
     }
 
     @Test(
             priority = 4,
             description = "NÃO deve logar usuário sem senha",
-            dependsOnMethods = "cadastrarUsuarioAdmin",
             groups = {"login", "exceção"}
     )
     public void realizarLoginSemSenha() {
-        String body = "{" +
-                "\"email\": \"email@invalido.com\"," +
-                "\"password\": \"\"" +
-                "}";
+        Map<String, String> credenciais = new HashMap<>();
+        credenciais.put("email", emailValido);
+        credenciais.put("password", "");
 
-        requestNoAuth()
-            .body(body)
+        requestJson()
+            .body(credenciais)
         .when()
             .post("/login")
         .then()
             .log().all()
-            .statusCode(400)
-            .body("password", equalTo(MSG_LOGIN_SEM_SENHA))
-            .body(matchesJsonSchemaInClasspath("schemas/login/realizar-login-sem-senha-schema.json"));
+            .spec(responseComSchema(400, "schemas/login/realizar-login-sem-senha-schema.json"))
+            .body("password", equalTo(MSG_LOGIN_SEM_SENHA));
     }
 
     @Test(
             priority = 5,
-            description = "NÃO deve logar usuário sem senha",
-            dependsOnMethods = "cadastrarUsuarioAdmin",
+            description = "NÃO deve logar usuário sem email e senha",
             groups = {"login", "exceção"}
     )
     public void realizarLoginSemEmailSenha() {
-        String body = "{" +
-                "\"email\": \"\"," +
-                "\"password\": \"\"" +
-                "}";
+        Map<String, String> credenciais = new HashMap<>();
+        credenciais.put("email", "");
+        credenciais.put("password", "");
 
-        requestNoAuth()
-            .body(body)
+        requestJson()
+            .body(credenciais)
         .when()
             .post("/login")
         .then()
-            .log().all()
-            .statusCode(400)
+            .log().all().spec(responseComSchema(400,
+                        "schemas/login/realizar-login-sem-email-senha-schema.json"))
             .body("email", equalTo(MSG_LOGIN_SEM_EMAIL))
-            .body("password", equalTo(MSG_LOGIN_SEM_SENHA))
-            .body(matchesJsonSchemaInClasspath("schemas/login/realizar-login-sem-email-senha-schema.json"));
+            .body("password", equalTo(MSG_LOGIN_SEM_SENHA));
     }
-
 }
