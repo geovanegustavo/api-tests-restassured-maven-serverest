@@ -186,4 +186,42 @@ public class UsuarioTest extends BaseTest {
             .body("message", equalTo(MSG_REGISTRO_EXCLUIDO));
     }
 
+    @Test(
+            priority = 9,
+            description = "NÃO deve encontrar usuário pelo id",
+            dependsOnMethods = "excluirUsuario",
+            groups = {"usuario", "exceção"}
+    )
+    public void usuarioNaoEncontrado() {
+        String usuarioInexistenteId = gerarIdAleatorio();
+
+        requestJson()
+            .pathParam("id", usuarioInexistenteId)
+        .when()
+            .get("/usuarios/{id}")
+        .then()
+            .log().all()
+            .spec(responseComSchema(400, "schemas/usuario/nao-encontrar-usuario-schema.json"))
+            .body("message", equalTo(MSG_USUARIO_NAO_ENCONTRADO));
+    }
+
+    @Test(
+            priority = 10,
+            description = "NÃO deve excluir usuário não existente pelo id",
+            dependsOnMethods = "usuarioNaoEncontrado",
+            groups = {"usuario", "sucesso"}
+    )
+    public void usuarioNaoExcluido() {
+        String usuarioInexistenteId = gerarIdAleatorio();
+
+        requestJson()
+            .pathParam("id", usuarioInexistenteId)
+        .when()
+            .delete("/usuarios/{id}")
+        .then()
+            .log().all()
+            .spec(responseComSchema(200, "schemas/usuario/nao-excluir-usuario-schema.json"))
+            .body("message", equalTo(MSG_NENHUM_REGISTRO_EXCLUIDO));
+    }
+
 }
