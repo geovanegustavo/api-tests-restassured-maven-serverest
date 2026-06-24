@@ -1,21 +1,15 @@
 package serverest.tests;
 
-import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.testng.annotations.Test;
 import serverest.base.BaseTest;
 import serverest.util.TokenHolder;
 
-import static io.restassured.RestAssured.given;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.hamcrest.Matchers.equalTo;
 import static serverest.util.Constants.*;
 
 public class LoginTest extends BaseTest {
-
-    static {
-        RestAssured.baseURI = "https://serverest.dev";
-    }
 
     @Test(
             priority = 1,
@@ -24,12 +18,11 @@ public class LoginTest extends BaseTest {
             groups = {"login", "sucesso"}
     )
     public void realizarLoginUsuarioAdmin() {
-        String body = "{ \"email\": \"" + TokenHolder.email + "\", \"password\": \"" + TokenHolder.password + "\" }";
+        String body = "{" +
+                "\"email\": \"" + TokenHolder.email + "\"," +
+                "\"password\": \"" + TokenHolder.password + "\"" +
+                "}";
 
-        /*Response response = given()
-            .contentType("application/json")
-            .log().all()
-            .body(body)*/
         Response response = requestNoAuth()
             .body(body)
         .when()
@@ -51,12 +44,11 @@ public class LoginTest extends BaseTest {
             groups = {"login", "exceção"}
     )
     public void realizarLoginInvalido() {
-        String body = "{ \"email\": \"email@invalido.com\", \"password\": \"1234\" }";
+        String body = "{" +
+                "\"email\": \"email@invalido.com\"," +
+                "\"password\": \"1234\"" +
+                "}";
 
-        /*given()
-            .contentType("application/json")
-            .log().all()
-            .body(body)*/
         requestNoAuth()
             .body(body)
         .when()
@@ -75,12 +67,11 @@ public class LoginTest extends BaseTest {
             groups = {"login", "exceção"}
     )
     public void realizarLoginSemEmail() {
-        String body = "{ \"email\": \"\", \"password\": \"1234\" }";
+        String body = "{" +
+                "\"email\": \"\"," +
+                "\"password\": \"1234\"" +
+                "}";
 
-        /*given()
-            .contentType("application/json")
-            .log().all()
-            .body(body)*/
         requestNoAuth()
             .body(body)
         .when()
@@ -99,12 +90,11 @@ public class LoginTest extends BaseTest {
             groups = {"login", "exceção"}
     )
     public void realizarLoginSemSenha() {
-        String body = "{ \"email\": \"email@invalido.com\", \"password\": \"\" }";
+        String body = "{" +
+                "\"email\": \"email@invalido.com\"," +
+                "\"password\": \"\"" +
+                "}";
 
-        /*given()
-            .contentType("application/json")
-            .log().all()
-            .body(body)*/
         requestNoAuth()
             .body(body)
         .when()
@@ -117,18 +107,17 @@ public class LoginTest extends BaseTest {
     }
 
     @Test(
-            priority = 4,
+            priority = 5,
             description = "NÃO deve logar usuário sem senha",
             dependsOnMethods = "cadastrarUsuarioAdmin",
             groups = {"login", "exceção"}
     )
     public void realizarLoginSemEmailSenha() {
-        String body = "{ \"email\": \"\", \"password\": \"\" }";
+        String body = "{" +
+                "\"email\": \"\"," +
+                "\"password\": \"\"" +
+                "}";
 
-        /*given()
-            .contentType("application/json")
-            .log().all()
-            .body(body)*/
         requestNoAuth()
             .body(body)
         .when()

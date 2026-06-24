@@ -1,6 +1,5 @@
 package serverest.tests;
 
-import io.restassured.RestAssured;
 import org.testng.annotations.Test;
 import serverest.base.BaseTest;
 import serverest.model.Produto;
@@ -8,14 +7,9 @@ import serverest.util.ProdutoHelper;
 
 import static org.hamcrest.Matchers.*;
 import static serverest.util.Constants.*;
-import static io.restassured.RestAssured.given;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 
 public class ProdutoTest extends BaseTest {
-
-    static {
-        RestAssured.baseURI = "https://serverest.dev";
-    }
 
     String produtoId;
     Produto produtoCriado = ProdutoHelper.gerarProdutoAleatorio();
@@ -26,11 +20,6 @@ public class ProdutoTest extends BaseTest {
             groups = {"produto", "sucesso"}
     )
     public void cadastrarProduto() {
-        /*produtoId = given()
-            .contentType("application/json")
-            .header("Authorization", "Bearer " + TokenHolder.token)
-            .log().all()
-            .body(produtoCriado)*/
         produtoId = requestAuth()
             .body(produtoCriado)
         .when()
@@ -57,7 +46,6 @@ public class ProdutoTest extends BaseTest {
         .when()
             .post("/produtos")
         .then()
-            //.log().ifValidationFails()
             .log().all()
             .statusCode(400)
             .body("message", equalTo(MSG_PRODUTO_EXISTENTE))
@@ -71,10 +59,6 @@ public class ProdutoTest extends BaseTest {
             groups = {"produto", "sucesso"}
     )
     public void listarProdutoPorId() {
-        /*given()
-            .header("Authorization", "Bearer " + TokenHolder.token)
-            .pathParam("id", produtoId)
-            .log().all()*/
         requestAuth()
             .pathParam("id", produtoId)
         .when()
@@ -97,10 +81,6 @@ public class ProdutoTest extends BaseTest {
             groups = {"produto", "sucesso"}
     )
     public void pesquisarProdutoPorNome() {
-        /*given()
-            .header("Authorization", "Bearer " + TokenHolder.token)
-            .queryParam("nome", produtoCriado.getNome())
-            .log().all()*/
         requestAuth()
         .when()
             .get("/produtos")
@@ -131,12 +111,6 @@ public class ProdutoTest extends BaseTest {
         produtoCriado.getQuantidade() + 10
         );
 
-        /*given()
-            .contentType("application/json")
-            .header("Authorization", "Bearer " + TokenHolder.token)
-            .pathParam("id", produtoId)
-            .log().all()
-            .body(produtoEditado)*/
         requestAuth()
             .pathParam("id", produtoId)
             .body(produtoEditado)
@@ -156,10 +130,6 @@ public class ProdutoTest extends BaseTest {
             groups = {"produto", "sucesso"}
     )
     public void excluirProduto() {
-        /*given()
-            .header("Authorization", "Bearer " + TokenHolder.token)
-            .pathParam("id", produtoId)
-            .log().all()*/
         requestAuth()
             .pathParam("id", produtoId)
         .when()
@@ -178,10 +148,6 @@ public class ProdutoTest extends BaseTest {
             groups = {"produto", "exceção"}
     )
     public void listarProdutoExcluido() {
-        /*given()
-            .header("Authorization", "Bearer " + TokenHolder.token)
-            .pathParam("id", produtoId)
-            .log().all()*/
         requestAuth()
             .pathParam("id", produtoId)
         .when()
@@ -200,10 +166,6 @@ public class ProdutoTest extends BaseTest {
             groups = {"produto", "exceção"}
     )
     public void cadastrarProdutoSemToken() {
-        /*given()
-            .contentType("application/json")
-            .log().all()
-            .body(produtoCriado)*/
         requestNoAuth()
             .body(produtoCriado)
         .when()
