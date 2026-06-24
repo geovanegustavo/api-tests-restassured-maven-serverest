@@ -18,10 +18,12 @@ public class Constants {
     public static final String MSG_USUARIO_EMAIL_DUPLICADO = "Este email já está sendo usado";
     public static final String MSG_USUARIO_NAO_ENCONTRADO = "Usuário não encontrado";
 
-
     // PRODUTO
     public static final String MSG_PRODUTO_EXISTENTE = "Já existe produto com esse nome";
     public static final String MSG_PRODUTO_NAO_ENCONTRADO = "Produto não encontrado";
+
+    //CARRINHO
+    public static final String MSG_CARRINHO_DUPLICADO = "Não é permitido ter mais de 1 carrinho";
 
     private Constants() {
         // construtor privado para evitar instância

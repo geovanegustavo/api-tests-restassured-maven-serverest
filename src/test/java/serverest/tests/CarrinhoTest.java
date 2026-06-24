@@ -7,14 +7,12 @@ import serverest.model.Carrinho;
 import serverest.model.CarrinhoItem;
 import serverest.model.Produto;
 import serverest.model.Usuario;
-import serverest.util.ProdutoHelper;
 import serverest.util.UsuarioHelper;
 
 import java.util.*;
 
 import static org.hamcrest.Matchers.equalTo;
 import static serverest.util.Constants.*;
-import static serverest.util.ProdutoHelper.gerarProdutoAleatorio;
 
 public class CarrinhoTest extends BaseTest {
 
@@ -111,6 +109,30 @@ public class CarrinhoTest extends BaseTest {
             .log().all()
             .spec(responseComSchema(201, "schemas/carrinho/cadastrar-carrinho-schema.json"))
             .body("message", equalTo(MSG_CADASTRO_SUCESSO))
+            .extract()
+            .path("_id");
+    }
+
+    @Test(
+            priority = 2,
+            description = "NÃO deve cadastrar um carrinho duplicado",
+            groups = {"carrinho", "exceção"}
+    )
+    public void naoDeveCadastrarCarrinhoDuplicado() {
+        // Monta a lista de itens usando o produto cadastrado no setup
+        List<CarrinhoItem> itens = new ArrayList<>();
+        itens.add(new CarrinhoItem(produtoId, 2)); // Comprando 2 unidades
+
+        Carrinho novoCarrinho = new Carrinho(itens);
+
+        carrinhoId = requestAuth(tokenUsuario)
+            .body(novoCarrinho)
+        .when()
+            .post("/carrinhos")
+        .then()
+            .log().all()
+            .spec(responseComSchema(400, "schemas/carrinho/cadastrar-carrinho-duplicado-schema.json"))
+            .body("message", equalTo(MSG_CARRINHO_DUPLICADO))
             .extract()
             .path("_id");
     }
