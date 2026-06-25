@@ -1,5 +1,6 @@
 package serverest.tests;
 
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import serverest.base.BaseTest;
@@ -18,12 +19,17 @@ import static serverest.util.Constants.*;
 public class ProdutoTest extends BaseTest {
 
     private String token;
+    private String usuarioId; // <-- Guardar o ID do admin
 
     @BeforeClass(description = "Garante que o teste de produtos tenha um token válido e independente")
     public void setupProdutoTest() {
-        // 1. Cria um utilizador administrador dinâmico para este contexto de testes
+        // 1. Cria um usuário administrador dinâmico para este contexto de testes
         Map<String, Object> dadosMassa = UsuarioHelper.cadastrarUsuario("true");
         Usuario usuarioAdmin = (Usuario) dadosMassa.get("usuario");
+
+        // Guarda o ID do usuário para o desmonte posterior
+        this.usuarioId = (String) dadosMassa.get("id");
+
         String emailAdmin = usuarioAdmin.getEmail();
         String senhaAdmin = usuarioAdmin.getPassword();
 
@@ -45,6 +51,20 @@ public class ProdutoTest extends BaseTest {
 
         // Armazena o token na variável local da instância
         this.token = respostaLogin.getAuthorization().replace("Bearer ", "");
+    }
+
+    @AfterClass(description = "Limpa o usuário administrador criado para o contexto do teste")
+    public void tearDownProdutoTest() {
+        if (this.usuarioId != null) {
+            requestAuth(this.token)
+                .pathParam("id", this.usuarioId)
+            .when()
+                .delete("/usuarios/{id}")
+            .then()
+                .statusCode(200);
+
+            System.out.println("Usuário administrador de testes deletado com sucesso.");
+        }
     }
 
     /**
