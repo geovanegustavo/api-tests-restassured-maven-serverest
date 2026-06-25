@@ -145,7 +145,7 @@ public class ProdutoTest extends BaseTest {
         Produto novoProduto = (Produto) dadosMassa.get("produto");
 
         try {
-            // 2. AÇÃO: Realiza a exclusão
+            // 2. AÇÃO: Realiza a pesquisa
             requestAuth(this.token)
                 .pathParam("id", idCadastrado)
             .when()
@@ -153,11 +153,11 @@ public class ProdutoTest extends BaseTest {
             .then()
                 .log().all()
                 .spec(responseComSchema(200, "schemas/produto/listar-produto-schema.json"))
-                .body("produtos._id", hasItem(idCadastrado))
-                .body("produtos.nome", hasItem(novoProduto.getNome()))
-                .body("produtos.preco", hasItem(novoProduto.getPreco()))
-                .body("produtos.descricao", hasItem(novoProduto.getDescricao()))
-                .body("produtos.quantidade", hasItem(novoProduto.getQuantidade()));
+                .body("_id", equalTo(idCadastrado))
+                .body("nome", equalTo(novoProduto.getNome()))
+                .body("preco", equalTo(novoProduto.getPreco()))
+                .body("descricao", equalTo(novoProduto.getDescricao()))
+                .body("quantidade", equalTo(novoProduto.getQuantidade()));
 
             // 3. ASSERÇÃO: Valida o que precisa do teste
             assertThat(idCadastrado).isNotBlank();
