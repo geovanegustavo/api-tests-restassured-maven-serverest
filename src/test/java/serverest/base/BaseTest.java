@@ -8,6 +8,8 @@ import org.testng.annotations.BeforeClass;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
+import static org.hamcrest.Matchers.equalTo;
+import static serverest.util.Constants.MSG_REGISTRO_EXCLUIDO;
 
 public abstract class BaseTest {
 
@@ -71,6 +73,20 @@ public abstract class BaseTest {
                     .delete("/usuarios/{id}")
                     .then()
                     .spec(responseComSchema(200, "schemas/usuario/excluir-usuario-schema.json"));
+        }
+    }
+
+    protected void deletarProdutoSeExistir(String id, String token) {
+        if (id != null) {
+            System.out.println("🧹 Limpando base de dados... Excluindo produto ID: " + id);
+            requestAuth(token)
+                    .pathParam("id", id)
+                    .when()
+                    .delete("/produtos/{id}")
+                    .then()
+                    .log().all()
+                    .spec(responseComSchema(200, "schemas/produto/excluir-produto-schema.json"))
+                    .body("message", equalTo(MSG_REGISTRO_EXCLUIDO));
         }
     }
 }

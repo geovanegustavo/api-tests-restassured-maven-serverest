@@ -42,7 +42,7 @@ public class UsuarioTest extends BaseTest {
             idCadastrado = resposta.getId();
 
             // 3. ASSERÇÃO: Valida o que precisa do teste
-            //assertThat(idCadastrado).isNotBlank();
+            assertThat(idCadastrado).isNotBlank();
 
         } finally {
             // 4. LIMPEZA: Reutiliza o método da BaseTest
