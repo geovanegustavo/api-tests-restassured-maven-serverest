@@ -153,11 +153,11 @@ public class ProdutoTest extends BaseTest {
             .then()
                 .log().all()
                 .spec(responseComSchema(200, "schemas/produto/listar-produto-schema.json"))
-                .body("_id", equalTo(idCadastrado))
-                .body("nome", equalTo(novoProduto.getNome()))
-                .body("preco", equalTo(novoProduto.getPreco()))
-                .body("descricao", equalTo(novoProduto.getDescricao()))
-                .body("quantidade", equalTo(novoProduto.getQuantidade()));
+                .body("produtos._id", hasItem(idCadastrado))
+                .body("produtos.nome", hasItem(novoProduto.getNome()))
+                .body("produtos.preco", hasItem(novoProduto.getPreco()))
+                .body("produtos.descricao", hasItem(novoProduto.getDescricao()))
+                .body("produtos.quantidade", hasItem(novoProduto.getQuantidade()));
 
             // 3. ASSERÇÃO: Valida o que precisa do teste
             assertThat(idCadastrado).isNotBlank();
