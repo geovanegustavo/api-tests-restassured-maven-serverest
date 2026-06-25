@@ -55,16 +55,7 @@ public class ProdutoTest extends BaseTest {
 
     @AfterClass(description = "Limpa o usuário administrador criado para o contexto do teste")
     public void tearDownProdutoTest() {
-        if (this.usuarioId != null) {
-            requestAuth(this.token)
-                .pathParam("id", this.usuarioId)
-            .when()
-                .delete("/usuarios/{id}")
-            .then()
-                .statusCode(200);
-
-            System.out.println("Usuário administrador de testes deletado com sucesso.");
-        }
+        deletarUsuarioSeExistir(this.usuarioId);
     }
 
     /**

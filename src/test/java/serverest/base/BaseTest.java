@@ -68,11 +68,11 @@ public abstract class BaseTest {
         if (id != null) {
             System.out.println("🧹 Limpando base de dados... Excluindo usuário ID: " + id);
             requestJson()
-                    .pathParam("id", id)
-                    .when()
-                    .delete("/usuarios/{id}")
-                    .then()
-                    .spec(responseComSchema(200, "schemas/usuario/excluir-usuario-schema.json"));
+                .pathParam("id", id)
+            .when()
+                .delete("/usuarios/{id}")
+            .then()
+                .spec(responseComSchema(200, "schemas/usuario/excluir-usuario-schema.json"));
         }
     }
 
@@ -80,13 +80,13 @@ public abstract class BaseTest {
         if (id != null) {
             System.out.println("🧹 Limpando base de dados... Excluindo produto ID: " + id);
             requestAuth(token)
-                    .pathParam("id", id)
-                    .when()
-                    .delete("/produtos/{id}")
-                    .then()
-                    .log().all()
-                    .spec(responseComSchema(200, "schemas/produto/excluir-produto-schema.json"))
-                    .body("message", equalTo(MSG_REGISTRO_EXCLUIDO));
+                .pathParam("id", id)
+            .when()
+                .delete("/produtos/{id}")
+            .then()
+                .log().all()
+                .spec(responseComSchema(200, "schemas/produto/excluir-produto-schema.json"))
+                .body("message", equalTo(MSG_REGISTRO_EXCLUIDO));
         }
     }
 }
