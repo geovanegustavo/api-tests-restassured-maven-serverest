@@ -2,201 +2,267 @@ package serverest.tests;
 
 import org.testng.annotations.Test;
 import serverest.base.BaseTest;
+import serverest.model.CadastrarUsuarioResponse;
 import serverest.model.Usuario;
 import serverest.util.UsuarioHelper;
 
+import java.util.Map;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.*;
-import static serverest.util.IdHelper.gerarIdAleatorio;
+import static org.hamcrest.Matchers.hasItem;
 import static serverest.util.Constants.*;
+import static serverest.util.IdHelper.gerarIdAleatorio;
 
 public class UsuarioTest extends BaseTest {
 
-    String usuarioId;
-    String usuarioComumId;
-    String usuarioInexistenteId;
-
-    String email = UsuarioHelper.gerarEmail();
-    String emailComum = UsuarioHelper.gerarEmail();
-
-    String senha = "1234";
-
-    Usuario usuarioCriado = new Usuario("Admin QA", email, senha, "true");
-    Usuario usuarioComumCriado = new Usuario("Usuario QA",  emailComum, senha, "false");
-
-    @Test(
-            priority = 1,
-            description = "Deve cadastrar um usuário Administrador com credenciais válidas",
-            groups = {"usuario", "sucesso"}
-    )
+    @Test(description = "Deve cadastrar um usuário Administrador")
     public void cadastrarUsuarioAdmin() {
-        usuarioId = requestJson()
-            .body(usuarioCriado)
-        .when()
-            .post("/usuarios")
-        .then()
-            .log().all()
-            .spec(responseComSchema(201, "schemas/usuario/cadastrar-usuario-schema.json"))
-            .body("message", equalTo(MSG_CADASTRO_SUCESSO))
-            .body("_id", notNullValue())
-            .extract()
-            .path("_id");
+        // 1. ARRANJO: Cria os dados dinâmicos do teste
+        String usuarioDinamico = serverest.util.UsuarioHelper.gerarUsuario();
+        String emailDinamico = serverest.util.UsuarioHelper.gerarEmail();
+        Usuario novoUsuario = new Usuario(usuarioDinamico, emailDinamico, "1234", "true");
+
+        String idCadastrado = null;
+
+        try {
+            // 2. AÇÃO: Realiza o cadastro
+            CadastrarUsuarioResponse resposta = requestJson()
+                .body(novoUsuario)
+            .when()
+                .post("/usuarios")
+            .then()
+                .log().all()
+                .spec(responseComSchema(201, "schemas/usuario/cadastrar-usuario-schema.json"))
+                .body("message", equalTo(MSG_CADASTRO_SUCESSO))
+                .body("_id", notNullValue())
+                .extract()
+                .as(CadastrarUsuarioResponse.class);
+
+            idCadastrado = resposta.getId();
+
+            // 3. ASSERÇÃO: Valida o que precisa do teste
+            //assertThat(idCadastrado).isNotBlank();
+
+        } finally {
+            // 4. LIMPEZA: Reutiliza o método da BaseTest
+            deletarUsuarioSeExistir(idCadastrado);
+        }
     }
 
-    @Test(
-            priority = 2,
-            description = "Deve cadastrar um usuário comum com credenciais válidas",
-            groups = {"usuario", "sucesso"}
-    )
+    @Test(description = "Deve cadastrar um usuário comum")
     public void cadastrarUsuarioComum() {
-        usuarioComumId = requestJson()
-            .body(usuarioComumCriado)
-        .when()
-            .post("/usuarios")
-        .then()
-            .log().all()
-            .spec(responseComSchema(201, "schemas/usuario/cadastrar-usuario-schema.json"))
-            .body("message", equalTo(MSG_CADASTRO_SUCESSO))
-            .body("_id", notNullValue())
-            .extract()
-            .path("_id");
+        // 1. ARRANJO: Cria os dados dinâmicos do teste
+        String usuarioDinamico = serverest.util.UsuarioHelper.gerarUsuario();
+        String emailDinamico = serverest.util.UsuarioHelper.gerarEmail();
+        Usuario novoUsuario = new Usuario(usuarioDinamico, emailDinamico, "1234", "false");
+
+        String idCadastrado = null;
+
+        try {
+            // 2. AÇÃO: Realiza o cadastro
+            CadastrarUsuarioResponse resposta = requestJson()
+                .body(novoUsuario)
+            .when()
+                .post("/usuarios")
+            .then()
+                .log().all()
+                .spec(responseComSchema(201, "schemas/usuario/cadastrar-usuario-schema.json"))
+                .body("message", equalTo(MSG_CADASTRO_SUCESSO))
+                .body("_id", notNullValue())
+                .extract()
+                .as(CadastrarUsuarioResponse.class);
+
+            idCadastrado = resposta.getId();
+
+            // 3. ASSERÇÃO: Valida o que precisa do teste
+            assertThat(idCadastrado).isNotBlank();
+
+        } finally {
+            // 4. LIMPEZA: Reutiliza o método da BaseTest
+            deletarUsuarioSeExistir(idCadastrado);
+        }
     }
 
-    @Test(
-            priority = 3,
-            description = "NÃO deve cadastrar um usuário com email duplicado",
-            groups = {"usuario", "exceção"}
-    )
-    public void cadastrarUsuarioEmailDuplicado() {
-        requestJson()
-            .body(usuarioComumCriado)
-        .when()
-            .post("/usuarios")
-        .then()
-            .log().all()
-            .spec(responseComSchema(400, "schemas/usuario/cadastrar-usuario-email-duplicado-schema.json"))
-            .body("message", equalTo(MSG_USUARIO_EMAIL_DUPLICADO));
-    }
-
-    @Test(
-            priority = 4,
-            description = "Deve listar o usuário cadastrado pelo id",
-            dependsOnMethods = "cadastrarUsuarioAdmin",
-            groups = {"usuario", "sucesso"}
-    )
-    public void listarUsuarioPorId() {
-        requestJson()
-            .pathParam("id", usuarioId)
-        .when()
-            .get("/usuarios/{id}")
-        .then()
-            .log().all()
-            .spec(responseComSchema(200, "schemas/usuario/listar-usuario-schema.json"))
-            .body("_id", equalTo(usuarioId))
-            .body("nome", equalTo(usuarioCriado.getNome()))
-            .body("email", equalTo(usuarioCriado.getEmail()))
-            .body("password", equalTo(usuarioCriado.getPassword()))
-            .body("administrador", equalTo(usuarioCriado.getAdministrador()));
-    }
-
-    @Test(
-            priority = 5,
-            description = "Deve pesquisar usuario cadastrado pelo nome",
-            dependsOnMethods = "cadastrarUsuarioAdmin",
-            groups = {"usuario", "sucesso"}
-    )
-    public void pesquisarUsuarioPorNome() {
-        requestJson()
-            .queryParam("nome", usuarioCriado.getNome())
-        .when()
-            .get("/usuarios")
-        .then()
-            .log().all()
-            .spec(responseComSchema(200, "schemas/usuario/pesquisar-usuario-schema.json"))
-            .body("usuarios._id", hasItem(usuarioId))
-            .body("usuarios.nome", hasItem(usuarioCriado.getNome()))
-            .body("usuarios.email", hasItem(usuarioCriado.getEmail()))
-            .body("usuarios.password", hasItem(usuarioCriado.getPassword()))
-            .body("usuarios.administrador", hasItem(usuarioCriado.getAdministrador()));
-    }
-
-    @Test(
-            priority = 6,
-            description = "Deve editar o usuário já cadastrado",
-            dependsOnMethods = "cadastrarUsuarioComum",
-            groups = {"usuario", "sucesso"}
-    )
+    @Test(description = "Deve editar usuário")
     public void editarUsuario() {
-        // cria um novo objeto com dados atualizados
-        Usuario usuarioEditado = new Usuario(
-            usuarioComumCriado.getNome() + " - Edição",
-            usuarioComumCriado.getEmail() + ".br",
-            usuarioComumCriado.getPassword() + "5",
-            "true"
-        );
+        // 1. ARRANJO: Cria os dados dinâmicos do teste
+        Map<String, Object> dadosMassa = UsuarioHelper.cadastrarUsuario("true");
+        String idCadastrado = (String) dadosMassa.get("id");
+        Usuario novoUsuario = (Usuario) dadosMassa.get("usuario");
 
-        requestJson()
-            .pathParam("id", usuarioComumId)
-            .body(usuarioEditado)
-        .when()
-            .put("/usuarios/{id}")
-        .then()
-            .log().all()
-            .spec(responseComSchema(200, "schemas/usuario/editar-usuario-schema.json"))
-            .body("message", equalTo(MSG_REGISTRO_ALTERADO));
+        Usuario usuarioEditado = new Usuario(
+                novoUsuario.getNome() + " - Edição",
+                novoUsuario.getEmail() + ".br",
+                novoUsuario.getPassword() + "5",
+                "true");
+
+        try {
+            // 2. AÇÃO: Realiza a edição
+            requestJson()
+                .pathParam("id", idCadastrado)
+                .body(usuarioEditado)
+            .when()
+                .put("/usuarios/{id}")
+            .then()
+                .log().all()
+                .spec(responseComSchema(200, "schemas/usuario/editar-usuario-schema.json"))
+                .body("message", equalTo(MSG_REGISTRO_ALTERADO));
+
+            // 3. ASSERÇÃO: Valida o que precisa do teste
+            assertThat(idCadastrado).isNotBlank();
+
+        } finally {
+            // 4. LIMPEZA: Reutiliza o método da BaseTest
+            deletarUsuarioSeExistir(idCadastrado);
+        }
     }
 
-    @Test(
-            priority = 7,
-            description = "Deve cadastrar o usuário inexistente",
-            groups = {"usuario", "sucesso"}
-    )
+    @Test(description = "Deve editar usuário inexistente, cadastrando novo usuário")
     public void editarUsuarioInexistente() {
-        // cria um novo objeto com dados novos
+        // 1. ARRANJO: Cria os dados dinâmicos do teste
         String nomeUsuarioInexistente = UsuarioHelper.gerarUsuario();
         String emailInexistente = UsuarioHelper.gerarEmail();
-        Usuario usuarioInexistente = new Usuario(nomeUsuarioInexistente, emailInexistente, senha, "false");
+        Usuario usuarioInexistente = new Usuario(nomeUsuarioInexistente, emailInexistente, "1234", "false");
 
-        usuarioInexistenteId = requestJson()
-            .pathParam("id", gerarIdAleatorio())
-            .body(usuarioInexistente)
-        .when()
-            .put("/usuarios/{id}")
-        .then()
-            .log().all()
-            .spec(responseComSchema(201, "schemas/usuario/cadastrar-usuario-schema.json"))
-            .body("message", equalTo(MSG_CADASTRO_SUCESSO))
-            .extract()
-            .path("_id");
+        String idCadastrado = null;
+
+        try {
+            // 2. AÇÃO: Realiza a edição
+            idCadastrado = requestJson()
+                .pathParam("id", gerarIdAleatorio())
+                .body(usuarioInexistente)
+            .when()
+                .put("/usuarios/{id}")
+            .then()
+                .log().all()
+                .spec(responseComSchema(201, "schemas/usuario/cadastrar-usuario-schema.json"))
+                .body("message", equalTo(MSG_CADASTRO_SUCESSO))
+                .extract()
+                .path("_id");
+
+            // 3. ASSERÇÃO: Valida o que precisa do teste
+            assertThat(idCadastrado).isNotBlank();
+
+        } finally {
+            // 4. LIMPEZA: Reutiliza o método da BaseTest
+            deletarUsuarioSeExistir(idCadastrado);
+        }
     }
 
-    @Test(
-            priority = 8,
-            description = "Deve excluir o usuário cadastrado pelo id",
-            dependsOnMethods = "editarUsuarioInexistente",
-            groups = {"usuario", "sucesso"}
-    )
+    @Test(description = "Deve excluir usuário")
     public void excluirUsuario() {
+        // 1. ARRANJO: Cria os dados dinâmicos do teste
+        Map<String, Object> dadosMassa = UsuarioHelper.cadastrarUsuario("true");
+        String idCadastrado = (String) dadosMassa.get("id");
+
+        // 2. AÇÃO: Realiza a exclusão
         requestJson()
-            .pathParam("id", usuarioInexistenteId)
+            .pathParam("id", idCadastrado)
         .when()
             .delete("/usuarios/{id}")
         .then()
             .log().all()
             .spec(responseComSchema(200, "schemas/usuario/excluir-usuario-schema.json"))
             .body("message", equalTo(MSG_REGISTRO_EXCLUIDO));
+
+        // 3. ASSERÇÃO: Valida o que precisa do teste
+        assertThat(idCadastrado).isNotBlank();
     }
 
-    @Test(
-            priority = 9,
-            description = "NÃO deve encontrar usuário pelo id",
-            dependsOnMethods = "excluirUsuario",
-            groups = {"usuario", "exceção"}
-    )
-    public void usuarioNaoEncontrado() {
-        String usuarioInexistenteId = gerarIdAleatorio();
+    @Test(description = "NÃO deve cadastrar um usuário com email duplicado")
+    public void cadastrarUsuarioEmailDuplicado() {
+        // 1. ARRANJO: Cria os dados dinâmicos do teste
+        Map<String, Object> dadosMassa = UsuarioHelper.cadastrarUsuario("true");
+        String idCadastrado = (String) dadosMassa.get("id");
+        Usuario novoUsuario = (Usuario) dadosMassa.get("usuario");
 
+        try {
+            // 2. AÇÃO: Realiza o cadastro
+            requestJson()
+                .body(novoUsuario)
+            .when()
+                .post("/usuarios")
+            .then()
+                .log().all()
+                .spec(responseComSchema(400, "schemas/usuario/cadastrar-usuario-email-duplicado-schema.json"))
+                .body("message", equalTo(MSG_USUARIO_EMAIL_DUPLICADO));
+
+            // 3. ASSERÇÃO: Valida o que precisa do teste
+            assertThat(idCadastrado).isNotBlank();
+
+        } finally {
+            // 4. LIMPEZA: Reutiliza o método da BaseTest
+            deletarUsuarioSeExistir(idCadastrado);
+        }
+    }
+
+    @Test(description = "Deve pesquisar usuário por Id")
+    public void pesquisarUsuarioPorId() {
+        // 1. ARRANJO: Cria os dados dinâmicos do teste
+        Map<String, Object> dadosMassa = UsuarioHelper.cadastrarUsuario("true");
+        String idCadastrado = (String) dadosMassa.get("id");
+        Usuario novoUsuario = (Usuario) dadosMassa.get("usuario");
+
+        try {
+            // 2. AÇÃO: Realiza o cadastro
+            requestJson()
+                .pathParam("id", idCadastrado)
+            .when()
+                .get("/usuarios/{id}")
+            .then()
+                .log().all()
+                .spec(responseComSchema(200, "schemas/usuario/listar-usuario-schema.json"))
+                .body("_id", equalTo(idCadastrado))
+                .body("nome", equalTo(novoUsuario.getNome()))
+                .body("email", equalTo(novoUsuario.getEmail()))
+                .body("password", equalTo(novoUsuario.getPassword()))
+                .body("administrador", equalTo(novoUsuario.getAdministrador()));
+
+            // 3. ASSERÇÃO: Valida o que precisa do teste
+            assertThat(idCadastrado).isNotBlank();
+
+        } finally {
+            // 4. LIMPEZA: Reutiliza o método da BaseTest
+            deletarUsuarioSeExistir(idCadastrado);
+        }
+    }
+
+    @Test(description = "Deve pesquisar usuário por Nome")
+    public void pesquisarUsuarioPorNome() {
+        // 1. ARRANJO: Cria os dados dinâmicos do teste
+        Map<String, Object> dadosMassa = UsuarioHelper.cadastrarUsuario("true");
+        String idCadastrado = (String) dadosMassa.get("id");
+        Usuario novoUsuario = (Usuario) dadosMassa.get("usuario");
+
+        try {
+            // 2. AÇÃO: Realiza o cadastro
+            requestJson()
+                .queryParam("nome", novoUsuario.getNome())
+            .when()
+                .get("/usuarios")
+            .then()
+                .log().all()
+                .spec(responseComSchema(200, "schemas/usuario/pesquisar-usuario-schema.json"))
+                .body("usuarios._id", hasItem(idCadastrado))
+                .body("usuarios.nome", hasItem(novoUsuario.getNome()))
+                .body("usuarios.email", hasItem(novoUsuario.getEmail()))
+                .body("usuarios.password", hasItem(novoUsuario.getPassword()))
+                .body("usuarios.administrador", hasItem(novoUsuario.getAdministrador()));
+
+            // 3. ASSERÇÃO: Valida o que precisa do teste
+            assertThat(idCadastrado).isNotBlank();
+
+        } finally {
+            // 4. LIMPEZA: Reutiliza o método da BaseTest
+            deletarUsuarioSeExistir(idCadastrado);
+        }
+    }
+
+    @Test(description = "NÃO deve encontrar usuário pelo id")
+    public void usuarioNaoEncontrado() {
         requestJson()
-            .pathParam("id", usuarioInexistenteId)
+            .pathParam("id", gerarIdAleatorio())
         .when()
             .get("/usuarios/{id}")
         .then()
@@ -205,17 +271,10 @@ public class UsuarioTest extends BaseTest {
             .body("message", equalTo(MSG_USUARIO_NAO_ENCONTRADO));
     }
 
-    @Test(
-            priority = 10,
-            description = "NÃO deve excluir usuário não existente pelo id",
-            dependsOnMethods = "usuarioNaoEncontrado",
-            groups = {"usuario", "sucesso"}
-    )
+    @Test(description = "NÃO deve excluir usuário não existente")
     public void usuarioNaoExcluido() {
-        String usuarioInexistenteId = gerarIdAleatorio();
-
         requestJson()
-            .pathParam("id", usuarioInexistenteId)
+            .pathParam("id", gerarIdAleatorio())
         .when()
             .delete("/usuarios/{id}")
         .then()

@@ -59,4 +59,18 @@ public abstract class BaseTest {
                 .expectBody(matchesJsonSchemaInClasspath(schemaPath))
                 .build();
     }
+
+    // --- REUTILIZAÇÃO DE CÓDIGO ---
+
+    protected void deletarUsuarioSeExistir(String id) {
+        if (id != null) {
+            System.out.println("🧹 Limpando base de dados... Excluindo usuário ID: " + id);
+            requestJson()
+                    .pathParam("id", id)
+                    .when()
+                    .delete("/usuarios/{id}")
+                    .then()
+                    .spec(responseComSchema(200, "schemas/usuario/excluir-usuario-schema.json"));
+        }
+    }
 }

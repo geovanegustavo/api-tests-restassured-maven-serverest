@@ -4,6 +4,7 @@ import io.restassured.response.Response;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import serverest.base.BaseTest;
+import serverest.model.LoginResponse;
 import serverest.model.Produto;
 import serverest.model.Usuario;
 import serverest.util.ProdutoHelper;
@@ -40,16 +41,19 @@ public class ProdutoTest extends BaseTest {
         credenciais.put("email", emailAdmin);
         credenciais.put("password", senhaAdmin);
 
-        Response response = requestJson()
+        LoginResponse respostaLogin = requestJson()
             .body(credenciais)
         .when()
             .post("/login")
         .then()
-            .statusCode(200)
-            .extract().response();
+            .spec(responseStatusEJson(200))
+            .extract()
+            .as(LoginResponse.class);
+
+        System.out.println("Mensagem da API: " + respostaLogin.getMessage());
 
         // Armazena o token na variável local da instância
-        this.token = response.jsonPath().getString("authorization").replace("Bearer ", "");
+        this.token = respostaLogin.getAuthorization().replace("Bearer ", "");
     }
 
     @Test(
