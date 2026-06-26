@@ -4,12 +4,11 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import serverest.base.BaseTest;
-import serverest.model.*;
+import serverest.models.*;
 import serverest.util.LoginHelper;
 import serverest.util.ProdutoHelper;
 import serverest.util.UsuarioHelper;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;

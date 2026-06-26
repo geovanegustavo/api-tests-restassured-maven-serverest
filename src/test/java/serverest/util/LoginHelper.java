@@ -1,7 +1,7 @@
 package serverest.util;
 
 import io.restassured.RestAssured;
-import serverest.model.LoginResponse;
+import serverest.models.LoginResponse;
 
 import java.util.HashMap;
 import java.util.Map;

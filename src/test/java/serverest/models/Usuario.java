@@ -1,4 +1,4 @@
-package serverest.model;
+package serverest.models;
 
 public class Usuario {
     private String nome;

@@ -1,4 +1,4 @@
-package serverest.model;
+package serverest.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

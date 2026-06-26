@@ -1,9 +1,9 @@
 package serverest.util;
 
 import io.restassured.RestAssured;
-import serverest.model.CadastrarCarrinhoResponse;
-import serverest.model.Carrinho;
-import serverest.model.CarrinhoItem;
+import serverest.models.CadastrarCarrinhoResponse;
+import serverest.models.Carrinho;
+import serverest.models.CarrinhoItem;
 
 import java.util.ArrayList;
 import java.util.List;

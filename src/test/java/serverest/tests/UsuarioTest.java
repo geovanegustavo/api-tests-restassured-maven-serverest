@@ -2,8 +2,8 @@ package serverest.tests;
 
 import org.testng.annotations.Test;
 import serverest.base.BaseTest;
-import serverest.model.CadastrarUsuarioResponse;
-import serverest.model.Usuario;
+import serverest.models.CadastrarUsuarioResponse;
+import serverest.models.Usuario;
 import serverest.util.UsuarioHelper;
 
 import java.util.Map;

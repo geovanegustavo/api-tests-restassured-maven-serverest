@@ -5,10 +5,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import io.restassured.RestAssured;
-import serverest.model.CadastrarProdutoResponse;
-import serverest.model.CadastrarUsuarioResponse;
-import serverest.model.Produto;
-import serverest.model.Usuario;
+import serverest.models.CadastrarProdutoResponse;
+import serverest.models.Produto;
 
 public class ProdutoHelper {
 

@@ -2,7 +2,7 @@ package serverest.tests;
 
 import org.testng.annotations.Test;
 import serverest.base.BaseTest;
-import serverest.model.Usuario;
+import serverest.models.Usuario;
 import serverest.util.UsuarioHelper;
 
 import java.util.HashMap;

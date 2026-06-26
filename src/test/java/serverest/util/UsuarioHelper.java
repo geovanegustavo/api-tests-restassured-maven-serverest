@@ -1,9 +1,8 @@
 package serverest.util;
 
 import io.restassured.RestAssured;
-import serverest.base.BaseTest;
-import serverest.model.CadastrarUsuarioResponse;
-import serverest.model.Usuario;
+import serverest.models.CadastrarUsuarioResponse;
+import serverest.models.Usuario;
 
 import java.util.HashMap;
 import java.util.Map;
