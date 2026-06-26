@@ -66,7 +66,7 @@ public abstract class BaseTest {
 
     protected void deletarUsuarioSeExistir(String id) {
         if (id != null) {
-            System.out.println("🧹 Limpando base de dados... Excluindo usuário ID: " + id);
+            System.out.println("Limpando base de dados... Excluindo usuário ID: " + id);
             requestJson()
                 .pathParam("id", id)
             .when()
@@ -78,7 +78,7 @@ public abstract class BaseTest {
 
     protected void deletarProdutoSeExistir(String id, String token) {
         if (id != null) {
-            System.out.println("🧹 Limpando base de dados... Excluindo produto ID: " + id);
+            System.out.println("Limpando base de dados... Excluindo produto ID: " + id);
             requestAuth(token)
                 .pathParam("id", id)
             .when()
@@ -89,4 +89,18 @@ public abstract class BaseTest {
                 .body("message", equalTo(MSG_REGISTRO_EXCLUIDO));
         }
     }
+
+    protected void deletarCarrinhoSeExistir(String token) {
+        // A ServeRest identifica e limpa o carrinho baseado apenas no Token do usuário comum
+        System.out.println("Limpando base de dados... Concluindo carrinho via Token.");
+
+        requestAuth(token)
+        .when()
+            .delete("/carrinhos/concluir-compra")
+        .then()
+            .log().all()
+            .spec(responseComSchema(200, "schemas/carrinho/excluir-carrinho-schema.json"))
+            .body("message", equalTo(MSG_REGISTRO_EXCLUIDO));
+    }
+
 }

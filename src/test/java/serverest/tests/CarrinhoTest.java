@@ -1,139 +1,142 @@
 package serverest.tests;
 
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import serverest.base.BaseTest;
-import serverest.model.Carrinho;
-import serverest.model.CarrinhoItem;
-import serverest.model.Produto;
-import serverest.model.Usuario;
+import serverest.model.*;
+import serverest.util.ProdutoHelper;
 import serverest.util.UsuarioHelper;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static serverest.util.Constants.*;
+import static serverest.util.Constants.MSG_CADASTRO_SUCESSO;
+import static serverest.util.Constants.MSG_CARRINHO_DUPLICADO;
 
 public class CarrinhoTest extends BaseTest {
 
-    private String tokenUsuario;
+    private String tokenAdmin;
+    private String adminId;
     private String produtoId;
-    private String carrinhoId;
+    private String usuarioComumId;
+    private String tokenUsuarioComum;
 
     @BeforeClass(description = "Prepara os dados necessários para a criação do carrinho")
     public void setupCarrinhoTest() {
-        // 1. Criar um usuário administrador para poder cadastrar o produto
-        String emailAdmin = UsuarioHelper.gerarEmail();
-        Usuario usuarioAdmin = new Usuario("Admin Carrinho", emailAdmin, "1234", "true");
+        // 1. Cria e autentica o usuário administrador
+        Map<String, Object> dadosMassaAdmin = UsuarioHelper.cadastrarUsuario("true");
+        Usuario usuarioAdmin = (Usuario) dadosMassaAdmin.get("usuario");
+        this.adminId = (String) dadosMassaAdmin.get("id");
+        this.tokenAdmin = realizarLogin(usuarioAdmin.getEmail(), usuarioAdmin.getPassword());
 
-        requestJson()
-            .body(usuarioAdmin)
-        .when()
-            .post("/usuarios")
-        .then()
-            .statusCode(201);
-        System.out.println("Cadastrou usuário admin");
+        // 2. Cadastra o produto necessário para os testes
+        Map<String, Object> dadosProduto = ProdutoHelper.cadastrarProduto(this.tokenAdmin, 100, 200);
+        this.produtoId = (String) dadosProduto.get("id");
 
-        // 2. Logar com o administrador para obter o token administrativo
-        Map<String, String> credenciaisAdmin = new HashMap<>();
-        credenciaisAdmin.put("email", emailAdmin);
-        credenciaisAdmin.put("password", "1234");
-
-        String tokenAdmin = requestJson()
-            .body(credenciaisAdmin)
-        .when()
-            .post("/login")
-        .then()
-            .statusCode(200)
-            .extract().path("authorization").toString().replace("Bearer ", "");
-        System.out.println("Logou no sistema com admin");
-
-        // 3. Cadastrar um produto usando o token do administrador
-        String nomeProduto = "Produto_" + UUID.randomUUID().toString().substring(0, 8);
-        Produto produtoComEstoque = new Produto(nomeProduto, 470,
-                "Produto para Teste de Carrinho", 100);
-
-        produtoId = requestAuth(tokenAdmin)
-            .body(produtoComEstoque)
-        .when()
-            .post("/produtos")
-        .then()
-            .statusCode(201)
-            .extract().path("_id");
-        System.out.println("Cadastrou produto");
-
-        // 4. Criar um usuário comum que será o dono do carrinho
-        String emailCliente = UsuarioHelper.gerarEmail();
-        Usuario usuarioCliente = new Usuario("Cliente Carrinho", emailCliente, "1234", "false");
-
-        requestJson()
-            .body(usuarioCliente)
-        .when()
-            .post("/usuarios")
-        .then()
-            .statusCode(201);
-        System.out.println("Cadastrou usuário comum");
-
-        // 5. Logar com o usuário comum para obter o token que usaremos no teste do carrinho
-        Map<String, String> credenciaisCliente = new HashMap<>();
-        credenciaisCliente.put("email", emailCliente);
-        credenciaisCliente.put("password", "1234");
-
-        tokenUsuario = requestJson()
-            .body(credenciaisCliente)
-        .when()
-            .post("/login")
-        .then()
-            .statusCode(200)
-            .extract().path("authorization").toString().replace("Bearer ", "");
-        System.out.println("Logou no sistema com usuário comum");
+        // 3. Cria e autentica o usuário comum (dono do carrinho)
+        Map<String, Object> dadosUsuarioComum = UsuarioHelper.cadastrarUsuario("false");
+        Usuario usuarioComum = (Usuario) dadosUsuarioComum.get("usuario");
+        this.usuarioComumId = (String) dadosUsuarioComum.get("id");
+        this.tokenUsuarioComum = realizarLogin(usuarioComum.getEmail(), usuarioComum.getPassword());
     }
 
-    @Test(
-            priority = 1,
-            description = "Deve cadastrar um carrinho com sucesso para um usuário autenticado",
-            groups = {"carrinho", "sucesso"}
-    )
+    @AfterClass(description = "Limpa a massa de dados gerada para o bloco de testes")
+    public void tearDownCarrinhoTest() {
+        if (this.produtoId != null) {
+            deletarProdutoSeExistir(this.produtoId, this.tokenAdmin);
+        }
+        if (this.usuarioComumId != null) {
+            deletarUsuarioSeExistir(this.usuarioComumId);
+        }
+        if (this.adminId != null) {
+            deletarUsuarioSeExistir(this.adminId);
+        }
+        System.out.println("Massa de dados do carrinho limpa com sucesso!");
+    }
+
+    @Test(description = "Deve cadastrar um carrinho com sucesso")
     public void cadastrarCarrinhoComSucesso() {
-        // Monta a lista de itens usando o produto cadastrado no setup
-        List<CarrinhoItem> itens = new ArrayList<>();
-        itens.add(new CarrinhoItem(produtoId, 2)); // Comprando 2 unidades
+        Carrinho novoCarrinho = criarCarrinho();
 
-        Carrinho novoCarrinho = new Carrinho(itens);
+        try {
+            CadastrarCarrinhoResponse resposta = requestAuth(tokenUsuarioComum)
+                .body(novoCarrinho)
+            .when()
+                .post("/carrinhos")
+            .then()
+                .log().all()
+                .spec(responseComSchema(201, "schemas/carrinho/cadastrar-carrinho-schema.json"))
+                .body("message", equalTo(MSG_CADASTRO_SUCESSO))
+                .extract()
+                .as(CadastrarCarrinhoResponse.class);
 
-        carrinhoId = requestAuth(tokenUsuario)
-            .body(novoCarrinho)
-        .when()
-            .post("/carrinhos")
-        .then()
-            .log().all()
-            .spec(responseComSchema(201, "schemas/carrinho/cadastrar-carrinho-schema.json"))
-            .body("message", equalTo(MSG_CADASTRO_SUCESSO))
-            .extract()
-            .path("_id");
+            assertThat(resposta.getId()).isNotBlank();
+
+        } finally {
+            deletarCarrinhoSeExistir(this.tokenUsuarioComum);
+        }
     }
 
-    @Test(
-            priority = 2,
-            description = "NÃO deve cadastrar um carrinho duplicado",
-            groups = {"carrinho", "exceção"}
-    )
+    @Test(description = "NÃO deve cadastrar um carrinho duplicado")
     public void naoDeveCadastrarCarrinhoDuplicado() {
-        // Monta a lista de itens usando o produto cadastrado no setup
-        List<CarrinhoItem> itens = new ArrayList<>();
-        itens.add(new CarrinhoItem(produtoId, 2)); // Comprando 2 unidades
+        Carrinho carrinhoInicial = criarCarrinho();
 
-        Carrinho novoCarrinho = new Carrinho(itens);
-
-        carrinhoId = requestAuth(tokenUsuario)
-            .body(novoCarrinho)
+        // Cadastra o primeiro carrinho de forma direta para preparar o cenário de erro
+        requestAuth(tokenUsuarioComum)
+            .body(carrinhoInicial)
         .when()
             .post("/carrinhos")
         .then()
-            .log().all()
-            .spec(responseComSchema(400, "schemas/carrinho/cadastrar-carrinho-duplicado-schema.json"))
-            .body("message", equalTo(MSG_CARRINHO_DUPLICADO))
+            .statusCode(201);
+
+        Carrinho novoCarrinho = criarCarrinho();
+
+        try {
+            requestAuth(tokenUsuarioComum)
+                .body(novoCarrinho)
+            .when()
+                .post("/carrinhos")
+            .then()
+                .log().all()
+                .spec(responseComSchema(400, "schemas/carrinho/cadastrar-carrinho-duplicado-schema.json"))
+                .body("message", equalTo(MSG_CARRINHO_DUPLICADO));
+
+        } finally {
+            deletarCarrinhoSeExistir(this.tokenUsuarioComum);
+        }
+    }
+
+    /**
+     * MÉTODOS AUXILIARES
+     */
+
+    // Isola o fluxo repetitivo de login
+    private String realizarLogin(String email, String password) {
+        Map<String, String> credenciais = new HashMap<>();
+        credenciais.put("email", email);
+        credenciais.put("password", password);
+
+        LoginResponse resposta = requestJson()
+            .body(credenciais)
+        .when()
+            .post("/login")
+        .then()
+            .spec(responseStatusEJson(200))
             .extract()
-            .path("_id");
+            .as(LoginResponse.class);
+
+        return resposta.getAuthorization().replace("Bearer ", "");
+    }
+
+    // Isola a montagem da lista de itens do carrinho
+    private Carrinho criarCarrinho() {
+        List<CarrinhoItem> itens = new ArrayList<>();
+        itens.add(new CarrinhoItem(produtoId, 2));
+        return new Carrinho(itens);
     }
 }
