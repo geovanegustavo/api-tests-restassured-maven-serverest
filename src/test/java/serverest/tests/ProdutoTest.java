@@ -5,6 +5,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import serverest.base.BaseTest;
 import serverest.model.*;
+import serverest.util.LoginHelper;
 import serverest.util.ProdutoHelper;
 import serverest.util.UsuarioHelper;
 
@@ -26,15 +27,10 @@ public class ProdutoTest extends BaseTest {
         // 1. Cria um usuário administrador dinâmico para este contexto de testes
         Map<String, Object> dadosMassa = UsuarioHelper.cadastrarUsuario("true");
         Usuario usuarioAdmin = (Usuario) dadosMassa.get("usuario");
-
-        // Guarda o ID do usuário para o desmonte posterior
         this.usuarioId = (String) dadosMassa.get("id");
 
-        String emailAdmin = usuarioAdmin.getEmail();
-        String senhaAdmin = usuarioAdmin.getPassword();
-
-        // 2. Realiza o login para obter o token de forma autónoma
-        efetuarLogin(emailAdmin, senhaAdmin);
+        // 2. Efetua o login e pega o token
+        this.token = LoginHelper.logarObterToken(usuarioAdmin.getEmail(), usuarioAdmin.getPassword());
     }
 
     @AfterClass(description = "Limpa o usuário administrador criado para o contexto do teste")
@@ -107,7 +103,6 @@ public class ProdutoTest extends BaseTest {
         Map<String, Object> dadosMassa = ProdutoHelper.cadastrarProduto(this.token, 100, 200);
         String idCadastrado = (String) dadosMassa.get("id");
 
-        // 2. AÇÃO: Realiza a exclusão
         requestAuth(this.token)
             .pathParam("id", idCadastrado)
         .when()
@@ -244,27 +239,6 @@ public class ProdutoTest extends BaseTest {
             .log().all()
             .spec(responseComSchema(401, "schemas/produto/cadastrar-produto-sem-token-schema.json"))
             .body("message", equalTo(MSG_TOKEN_INVALIDO));
-    }
-
-    /**
-     * MÉTODOS AUXILIARES
-     */
-
-    private void efetuarLogin(String email, String senha) {
-        Map<String, String> credenciais = new HashMap<>();
-        credenciais.put("email", email);
-        credenciais.put("password", senha);
-
-        LoginResponse respostaLogin = requestJson()
-            .body(credenciais)
-        .when()
-            .post("/login")
-        .then()
-            .spec(responseStatusEJson(200))
-            .extract()
-            .as(LoginResponse.class);
-
-        this.token = respostaLogin.getAuthorization().replace("Bearer ", "");
     }
 
 }

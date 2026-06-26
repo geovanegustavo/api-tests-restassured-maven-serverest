@@ -24,6 +24,7 @@ public class Constants {
 
     //CARRINHO
     public static final String MSG_CARRINHO_DUPLICADO = "Não é permitido ter mais de 1 carrinho";
+    public static final String MSG_CARRINHO_NAO_ENCONTRADO = "Carrinho não encontrado";
 
     private Constants() {
         // construtor privado para evitar instância
