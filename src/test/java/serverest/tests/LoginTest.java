@@ -1,6 +1,5 @@
 package serverest.tests;
 
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import serverest.base.BaseTest;
 import serverest.model.Usuario;
@@ -11,50 +10,47 @@ import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
 import static serverest.util.Constants.*;
+import static serverest.util.Constants.MSG_LOGIN_SEM_SENHA;
 
 public class LoginTest extends BaseTest {
 
-    private String emailValido;
-    private final String senhaValida = "1234";
+    /**
+     * CENÁRIOS DE SUCESSO
+     */
 
-    @BeforeClass(description = "Cria um utilizador válido prévio para os testes de login")
-    public void setupLogin() {
-        emailValido = UsuarioHelper.gerarEmail();
-        Usuario usuarioAdmin = new Usuario("Admin QA Login", emailValido, senhaValida, "true");
-
-        requestJson()
-            .body(usuarioAdmin)
-        .when()
-            .post("/usuarios")
-        .then()
-            .statusCode(201);
-    }
-
-    @Test(
-            priority = 1,
-            description = "Deve logar usuário administrador com credenciais válidas",
-            groups = {"login", "sucesso"}
-    )
+    @Test(description = "Deve logar usuário administrador com credenciais válidas")
     public void realizarLoginUsuarioAdmin() {
-        Map<String, String> credenciais = new HashMap<>();
-        credenciais.put("email", emailValido);
-        credenciais.put("password", senhaValida);
+        // 1. Cria um usuário administrador dinâmico para este contexto de testes
+        Map<String, Object> dadosMassa = UsuarioHelper.cadastrarUsuario("true");
+        Usuario usuarioAdmin = (Usuario) dadosMassa.get("usuario");
 
-        requestJson()
-            .body(credenciais)
-        .when()
-            .post("/login")
-        .then()
-            .log().all()
-            .spec(responseComSchema(200, "schemas/login/realizar-login-schema.json"))
-            .body("message", equalTo(MSG_LOGIN_SUCESSO));
+        // Guarda o ID do usuário para o desmonte posterior
+        String usuarioId = (String) dadosMassa.get("id");
+
+        try {
+            Map<String, String> credenciais = new HashMap<>();
+            credenciais.put("email", usuarioAdmin.getEmail());
+            credenciais.put("password", usuarioAdmin.getPassword());
+
+            requestJson()
+                .body(credenciais)
+            .when()
+                .post("/login")
+            .then()
+                .log().all()
+                .spec(responseComSchema(200, "schemas/login/realizar-login-schema.json"))
+                .body("message", equalTo(MSG_LOGIN_SUCESSO));
+        } finally {
+            deletarUsuarioSeExistir(usuarioId);
+        }
+
     }
 
-    @Test(
-            priority = 2,
-            description = "NÃO deve logar usuário com credenciais inválidas",
-            groups = {"login", "exceção"}
-    )
+    /**
+     * CENÁRIOS DE EXCEÇÃO
+     */
+
+    @Test(description = "NÃO deve logar usuário com credenciais inválidas")
     public void realizarLoginInvalido() {
         Map<String, String> credenciais = new HashMap<>();
         credenciais.put("email", "email@invalido.com");
@@ -70,11 +66,7 @@ public class LoginTest extends BaseTest {
             .body("message", equalTo(MSG_LOGIN_ERRADO));
     }
 
-    @Test(
-            priority = 3,
-            description = "NÃO deve logar usuário sem e-mail",
-            groups = {"login", "exceção"}
-    )
+    @Test(description = "NÃO deve logar usuário sem e-mail")
     public void realizarLoginSemEmail() {
         Map<String, String> credenciais = new HashMap<>();
         credenciais.put("email", "");
@@ -90,14 +82,10 @@ public class LoginTest extends BaseTest {
             .body("email", equalTo(MSG_LOGIN_SEM_EMAIL));
     }
 
-    @Test(
-            priority = 4,
-            description = "NÃO deve logar usuário sem senha",
-            groups = {"login", "exceção"}
-    )
+    @Test(description = "NÃO deve logar usuário sem senha")
     public void realizarLoginSemSenha() {
         Map<String, String> credenciais = new HashMap<>();
-        credenciais.put("email", emailValido);
+        credenciais.put("email", "email-valido@qa.com");
         credenciais.put("password", "");
 
         requestJson()
@@ -110,11 +98,7 @@ public class LoginTest extends BaseTest {
             .body("password", equalTo(MSG_LOGIN_SEM_SENHA));
     }
 
-    @Test(
-            priority = 5,
-            description = "NÃO deve logar usuário sem email e senha",
-            groups = {"login", "exceção"}
-    )
+    @Test(description = "NÃO deve logar usuário sem email e senha")
     public void realizarLoginSemEmailSenha() {
         Map<String, String> credenciais = new HashMap<>();
         credenciais.put("email", "");
@@ -126,8 +110,9 @@ public class LoginTest extends BaseTest {
             .post("/login")
         .then()
             .log().all().spec(responseComSchema(400,
-                        "schemas/login/realizar-login-sem-email-senha-schema.json"))
+                    "schemas/login/realizar-login-sem-email-senha-schema.json"))
             .body("email", equalTo(MSG_LOGIN_SEM_EMAIL))
             .body("password", equalTo(MSG_LOGIN_SEM_SENHA));
     }
+
 }
